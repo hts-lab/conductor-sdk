@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
-from google.cloud import storage  # imported, but client is only constructed when online
+from google.cloud import storage  # noqa: F401 (used when not offline)
 from .publisher import ResultsPublisher
 
 
@@ -24,9 +24,8 @@ class _Ctx:
       "inputs": {...}   # optional catalog
     }
 
-    OFFLINE mode (no GCP credentials required) is enabled when:
+    OFFLINE mode (no GCP credentials needed) when:
       - CONDUCTOR_DRY_RUN=1  OR  CONDUCTOR_LOCAL=1
-    In offline mode, file discovery uses the local mounted filesystem only.
     """
 
     def __init__(self):
@@ -41,7 +40,7 @@ class _Ctx:
         self.paths: Dict[str, str] = ctx.get("paths", {})
         self.inputs: Dict[str, Any] = ctx.get("inputs", {})
 
-        # Resolved standard locations (with fallbacks)
+        # Standard locations (with fallbacks)
         self.results_root = self.paths.get("results", f"{self.request_root}/results")
         self.figures_root = self.paths.get("figures", f"{self.results_root}/figures")
         self.tables_root = self.paths.get("tables", f"{self.results_root}/tables")
@@ -95,10 +94,6 @@ class _Ctx:
         If 'rel' exists as a direct path under request_root, use it.
         Otherwise, search request_root/data/** for the first lexicographic match
         of the basename and return it.
-
-        Examples the user may pass:
-          - "data/Operetta_objectresults.csv"
-          - "data/some/deeper/tree/Operetta_objectresults.csv" (exact)
         """
         rel = Path(rel)
 
@@ -114,7 +109,6 @@ class _Ctx:
             base = self.path(f"{self.request_root}/data")
             if not base.exists():
                 raise FileNotFoundError(f"Data directory not found: {base}")
-            # rglob with pattern 'target' finds files with that exact basename
             hits = sorted(
                 [p for p in base.rglob(target) if p.is_file() and p.name == target],
                 key=lambda p: str(p),
@@ -125,11 +119,10 @@ class _Ctx:
                 )
             return hits[0]
         else:
-            # GCS listing search (cheap suffix test for whole filename)
+            # GCS listing search
             prefix = f"{self.request_root}/data/"
             matches: list[str] = []
             for blob in self._gcs.list_blobs(self.bucket_name, prefix=prefix):
-                # Ensure we match the terminal filename
                 if blob.name.endswith("/" + target) or blob.name.endswith(target):
                     matches.append(blob.name)
             if not matches:
@@ -174,7 +167,6 @@ class _Ctx:
           - If given a path, register that path (relative to request root if not absolute)
         Then upsert results.json with an auto-incremented id (atomic).
         """
-        # If it's a matplotlib Figure (or fig-like), save it first
         if hasattr(fig_or_path, "savefig"):
             if not filename:
                 raise ValueError("filename required when publishing a Figure")
@@ -186,7 +178,6 @@ class _Ctx:
             p = Path(fig_or_path)
             if not p.is_absolute():
                 p = self.request_path(p)
-            # Derive request-relative portion after "<request_root>/"
             marker = self.request_root + "/"
             s = str(p)
             rel_for_json = s.split(marker, 1)[-1] if marker in s else s
@@ -216,5 +207,19 @@ class _Ctx:
         self._publisher.publish_artifact(rel, title=title, description=description, **extra)
 
 
-# Singleton users import:  from conductor_sdk import ctx
-ctx = _Ctx()
+# -------- Lazy singleton so import doesn't require CONDUCTOR_CONTEXT ----------
+_ctx_singleton: Optional[_Ctx] = None
+
+def _get_ctx() -> _Ctx:
+    global _ctx_singleton
+    if _ctx_singleton is None:
+        _ctx_singleton = _Ctx()
+    return _ctx_singleton
+
+class _LazyCtx:
+    """Proxy that constructs the real ctx on first attribute access."""
+    def __getattr__(self, name: str):
+        return getattr(_get_ctx(), name)
+
+# What users import:  from conductor_sdk import ctx
+ctx = _LazyCtx()
