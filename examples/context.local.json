@@ -1,0 +1,11 @@
+{
+  "bucket": "my-bucket",
+  "mount_path": "./_sandbox",
+  "request_root": "requests/REQ-LOCAL",
+  "paths": {
+    "results": "requests/REQ-LOCAL/results",
+    "figures": "requests/REQ-LOCAL/results/figures",
+    "tables": "requests/REQ-LOCAL/results/tables",
+    "artifacts": "requests/REQ-LOCAL/results/artifacts"
+  }
+}
