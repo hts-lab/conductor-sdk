@@ -13,6 +13,7 @@ def main():
     env["CONDUCTOR_CONTEXT"] = ctx
     if args.dry_run:
         env["CONDUCTOR_DRY_RUN"] = "1"
+        env["CONDUCTOR_LOCAL"] = "1"
 
     # Ensure package import works if not installed
     sys.path.append(str(Path(__file__).parent.resolve()))
