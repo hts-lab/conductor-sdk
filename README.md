@@ -25,3 +25,25 @@ python run_local.py --script examples/plate_heatmap.py --context examples/contex
 - Without --dry-run, you’ll need Google Cloud auth and a bucket named in your context.
 
 
+
+
+### Submitting a new workflow programmatically
+
+```python
+from conductor_sdk import submit_workflow, Step
+
+resp = submit_workflow(
+    project_id="demo",
+    experiment_id="exp-001",
+    created_by="user@mit.edu",
+    source_plate_name="SrcPlate01",
+    source_plate_format="96wEMPTY",
+    steps=[
+        Step("Dispense","LoadActiveWorklist","Tecan EVO"),
+        Step("Read","Absorbance_350-750_1nm","Spark 1.1"),
+    ],
+    # or set CONDUCTOR_API_BASE / CONDUCTOR_BEARER_TOKEN in env
+    base_url="https://conductor-sync-api-....run.app",
+)
+print(resp["request_id"])
+```
