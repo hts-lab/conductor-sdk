@@ -27,5 +27,5 @@ plt.tight_layout()
 
 ctx.publish_figure(fig, "plate_heatmap.png",
                    title="Cas9 intensity heatmap",
-                   description="Average Nuclei - Cas9_Intensity Mean per well")
+                   description="Average Nuclei - Cas9 Intensity Mean per well")
 plt.close(fig)

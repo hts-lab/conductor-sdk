@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "conductor-sdk"
-version = "0.2.0"  # minor bump: adds public client API
+version = "0.2.0"
 description = "Tiny SDK to read request data, publish analysis outputs/results.json, and submit workflows to Conductor."
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
-authors = [{name = "Your Name", email = "you@example.com"}]
+authors = [{name = "Mushriq Al-Jazrawe", email = "mushriq@mit.edu"}]
 dependencies = [
   "google-cloud-storage>=2.17.0",
   "httpx>=0.27.0"
